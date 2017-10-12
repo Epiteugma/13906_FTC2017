@@ -6,6 +6,9 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
+import org.firstinspires.ftc.robotcore.external.matrices.OpenGLMatrix;
+import org.firstinspires.ftc.robotcore.external.matrices.VectorF;
+import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
 import org.firstinspires.ftc.robotcore.external.navigation.RelicRecoveryVuMark;
 import org.firstinspires.ftc.teamcode.Autonomous.JewelHandler;
 import org.firstinspires.ftc.teamcode.Autonomous.JewelHandler.Team;
@@ -28,20 +31,23 @@ public class Autonomous_Testing extends LinearOpMode{
 
         Telemetry.Item pictographTele = telemetry.addData("Pictograph: ", RelicRecoveryVuMark.UNKNOWN);
         Telemetry.Item teamColor = telemetry.addData("Team: ", Team.UNKNOWN);
-        Telemetry.Item knockdownJewelTel = telemetry.addData("Motion: ", 0);
+        Telemetry.Item angle1 = telemetry.addData("Angle1: ", 0);
+        Telemetry.Item angle2 = telemetry.addData("Angle2: ", 0);
+        Telemetry.Item angle3 = telemetry.addData("Angle3: ", 0);
+
 
         pictographIdentification.init(hardwareMap);
-        jewelHandler.init(
-                hardwareMap,
-                "colorBalancingStone",
-                "colorJewel",
-                "jewelServo"
-        );
-        robot.init(
-                hardwareMap,
-                "leftDrive",
-                "rightDrive"
-        );
+//        jewelHandler.init(
+//                hardwareMap,
+//                "colorBalancingStone",
+//                "colorJewel",
+//                "jewelServo"
+//        );
+//        robot.init(
+//                hardwareMap,
+//                "leftDrive",
+//                "rightDrive"
+//        );
 
 
         waitForStart();
@@ -50,30 +56,26 @@ public class Autonomous_Testing extends LinearOpMode{
 
         pictographIdentification.start();
 
-        boolean knockdownJewel = jewelHandler.compute();
-
-        knockdownJewelTel.setValue(knockdownJewel);
         telemetry.update();
 
-        jewelHandler.retractServo();
-
-
-//        robot.incrementMotorPosition(
-//                288,
-//                -288,
-//                1,
-//                false
-//        );
-
         while (opModeIsActive()) {
-//            robot.move(255, 255);
+            Orientation rot = pictographIdentification.getPictographAngle();
+            if (rot != null) {
+                angle1.setValue(rot.firstAngle);
+                angle2.setValue(rot.secondAngle);
+                angle3.setValue(rot.thirdAngle);
+            }
 
             pictographIdentification.checkForPictograph();
             pictographTele.setValue(pictographIdentification.getCubePosition());
             telemetry.update();
 
-            teamColor.setValue(jewelHandler.computeColor(Sensor.BALANCING_STONE));
-            telemetry.update();
+//            teamColor.setValue(jewelHandler.computeColor(Sensor.BALANCING_STONE));
+//            telemetry.update();
         }
+    }
+
+    String format(OpenGLMatrix transformationMatrix) {
+        return (transformationMatrix != null) ? transformationMatrix.formatAsTransform() : "null";
     }
 }

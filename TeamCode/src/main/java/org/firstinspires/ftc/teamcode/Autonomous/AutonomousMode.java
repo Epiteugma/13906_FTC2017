@@ -10,6 +10,8 @@ import org.firstinspires.ftc.teamcode.General.RobotDrive;
 
 @Autonomous(name="Autonomous Mode", group="Revved Up")
 public class AutonomousMode extends LinearOpMode {
+    private static final double turningSpeed = 0.5;
+    private static final int turnDistance = 50;
 
     private ElapsedTime runTime = new ElapsedTime();
 
@@ -52,18 +54,17 @@ public class AutonomousMode extends LinearOpMode {
          */
         boolean knockdownJewel = jewelHandler.compute();
         robot.incrementMotorPosition(
-                knockdownJewel ? -20 : 20,
-                knockdownJewel ? 20 : -20,
-                .5,
+                knockdownJewel ? turnDistance : -turnDistance,
+                knockdownJewel ? -turnDistance : turnDistance,
+                turningSpeed,
                 true
         );
         jewelHandler.retractServo();
         robot.incrementMotorPosition(
-                knockdownJewel ? 20 : -20,
-                knockdownJewel ? -20 : 20,
-                .5,
+                knockdownJewel ? -turnDistance : turnDistance,
+                knockdownJewel ? turnDistance : -turnDistance,
+                turningSpeed,
                 true
         );
-
     }
 }

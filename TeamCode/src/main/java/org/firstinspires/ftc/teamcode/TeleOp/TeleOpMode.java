@@ -18,15 +18,10 @@ public class TeleOpMode extends LinearOpMode {
     private ClawThread claw = new ClawThread();
     private RobotDrive robot = new RobotDrive();
 
-    private Servo upClaw;
-    private Servo downClaw;
-
     @Override
     public void runOpMode() throws InterruptedException {
         telemetry.setAutoClear(false);
 
-        upClaw = hardwareMap.get(Servo.class, "upClaw");
-        downClaw = hardwareMap.get(Servo.class, "downClaw");
 
         waitForStart();
 
@@ -35,28 +30,21 @@ public class TeleOpMode extends LinearOpMode {
                 "leftDrive",
                 "rightDrive"
         );
-//        claw.init(
-//                hardwareMap,
-//                gamepad1,
-//                "linearSlideMotor",
-//                "linearSlideMotorEncoder",
-//                "downClaw",
-//                "upClaw"
-//        );
+        claw.init(
+                hardwareMap,
+                gamepad1,
+                "linearSlideMotor",
+                "linearSlideMotorEncoder",
+                "downClaw",
+                "upClaw"
+        );
 
         runTime.reset();
 
         while (opModeIsActive()) {
-
-            float drive = -gamepad1.left_stick_y;
-            float turn  =  gamepad1.left_stick_x;
+            float drive = gamepad1.left_stick_y;
+            float turn  = -gamepad1.left_stick_x;
             robot.move(drive + turn, drive - turn);
-
-            if (gamepad1.x) downClaw.setPosition(0.9);
-            else downClaw.setPosition(0.77);
-
-            if (gamepad1.y) upClaw.setPosition(0.1);
-            else upClaw.setPosition(0.22);
         }
     }
 }
