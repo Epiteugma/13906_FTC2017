@@ -45,7 +45,7 @@ public class RobotDrive {
     }
 
     // Move the robot by giving it ONLY motor power
-    public void move(float powL, float powR) {
+    public void move(double powL, double powR) {
         // For using the motors without the use of the encoders
         if (encoderInMove) {
             left_drive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
