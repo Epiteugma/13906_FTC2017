@@ -13,9 +13,16 @@ import org.firstinspires.ftc.teamcode.General.RobotDrive;
 @Autonomous(name="Autonomous Mode", group="Revved Up")
 public class AutonomousMode extends LinearOpMode {
     private static final double turningSpeed = 0.5;
-    private static final int turnDistance = 50;
+    private static final double alignmentPower = 0.2;
+    private static final double driveSpeed = 0.8;
+
+    private static final int turnTicks = 50;
     private static final int stepDownTicks = 300;
-    private static final double alignmentPower = 0.5;
+
+    private static final int balancingStoneToLeft = 1120;
+    private static final int balancingStoneToCenter = 928;
+    private static final int balancingStoneToRight = 734;
+
 
     private ElapsedTime runTime = new ElapsedTime();
 
@@ -58,15 +65,15 @@ public class AutonomousMode extends LinearOpMode {
          */
         boolean knockdownJewel = jewelHandler.compute();
         robot.incrementMotorPosition(
-                knockdownJewel ? turnDistance : -turnDistance,
-                knockdownJewel ? -turnDistance : turnDistance,
+                knockdownJewel ? turnTicks : -turnTicks,
+                knockdownJewel ? -turnTicks : turnTicks,
                 turningSpeed,
                 true
         );
         jewelHandler.retractServo();
         robot.incrementMotorPosition(
-                knockdownJewel ? -turnDistance : turnDistance,
-                knockdownJewel ? turnDistance : -turnDistance,
+                knockdownJewel ? -turnTicks : turnTicks,
+                knockdownJewel ? turnTicks : -turnTicks,
                 turningSpeed,
                 true
         );
@@ -90,5 +97,17 @@ public class AutonomousMode extends LinearOpMode {
         } while (Math.abs(angles.secondAngle) > 0.1);
         robot.move(0, 0);
 
+        // Move to the correct cryptobox
+        switch (pictographIdentification.getCubePosition()) {
+            case RIGHT:
+                robot.moveUsingGyro(balancingStoneToRight - stepDownTicks, driveSpeed);
+                break;
+            case CENTER:
+                robot.moveUsingGyro(balancingStoneToCenter - stepDownTicks, driveSpeed);
+                break;
+            case LEFT:
+                robot.moveUsingGyro(balancingStoneToLeft - stepDownTicks, driveSpeed);
+                break;
+        }
     }
 }

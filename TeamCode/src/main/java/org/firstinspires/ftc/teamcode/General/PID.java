@@ -30,7 +30,15 @@ class PID {
     private double lastError = 0;
     private double error = 0;
 
+    PID () {
+
+    }
+
     PID (double p, double i, double d, double omx, double omn) {
+        init(p, i, d, omn, omx);
+    }
+
+    public void init (double p, double i, double d, double omn, double omx) {
         kp = p;
         ki = i;
         kd = d;
