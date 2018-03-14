@@ -66,5 +66,5 @@ public class PictographIdentification {
 
     public RelicRecoveryVuMark getCubePosition() {return cubePosition;}
 
-    private void setCubePosition(RelicRecoveryVuMark position) {cubePosition = position;}
+    public void setCubePosition(RelicRecoveryVuMark position) {cubePosition = position;}
 }

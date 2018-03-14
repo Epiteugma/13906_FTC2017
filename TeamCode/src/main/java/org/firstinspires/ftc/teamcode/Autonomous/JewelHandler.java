@@ -13,13 +13,9 @@ public class JewelHandler {
         UNKNOWN
     }
 
-    public enum Sensor {
-        BALANCING_STONE,
-        JEWEL
-    }
-
-    private static final double armUpPosition = .5;
-    private static final double armDownPosition = 1;
+    private static final double armUpPosition = 0.50;
+    private static final double armDownPosition = 0;
+    private static final double armStartPosition = 1;
 
     private HardwareMap hardwareMap = null;
 
@@ -29,21 +25,22 @@ public class JewelHandler {
     private volatile boolean knockdownJewel = Boolean.parseBoolean(null);
 
     public Servo servo = null;
-    private LynxI2cColorRangeSensor colorBalancingStone, colorJewel = null;
+    private LynxI2cColorRangeSensor colorJewel = null;
 
-    public void init(HardwareMap hm,
-                     String cbs,
-                     String cj,
-                     String s) {
+    public void initTeleOp(HardwareMap hm) {
+        hardwareMap = hm;
+        servo = hardwareMap.get(Servo.class, "jewelServo");
+        servo.setPosition(armUpPosition);
+    }
+
+    public void initAutonomous(HardwareMap hm, Team t) {
         hardwareMap = hm;
 
-        servo = hardwareMap.get(Servo.class, s);
-        colorBalancingStone = hardwareMap.get(LynxI2cColorRangeSensor.class, cbs);
-        colorJewel = hardwareMap.get(LynxI2cColorRangeSensor.class, cj);
+        servo = hardwareMap.get(Servo.class, "jewelServo");
+        colorJewel = hardwareMap.get(LynxI2cColorRangeSensor.class, "colorJewel");
+        servo.setPosition(armStartPosition);
 
-        // Make sure the servo is in the correct starting position
-        servo.setPosition(armUpPosition);
-
+        team = t;
     }
 
     public Team getTeamColor() {return team;}
@@ -51,11 +48,9 @@ public class JewelHandler {
     public boolean getknockdownJewel () {return knockdownJewel;}
 
     // Compute the color (RED or BLUE) that the chosen color sensor sees
-    public Team computeColor(Sensor s) {
-        LynxI2cColorRangeSensor sensor = s == Sensor.BALANCING_STONE ? colorBalancingStone : colorJewel;
-
+    public Team computeColor() {
         float hsv[] = {0, 0, 0};
-        Color.colorToHSV(sensor.argb(), hsv);
+        Color.colorToHSV(colorJewel.argb(), hsv);
 
         float hue = hsv[0];
         if (hue < 30 || hue > 350) return Team.RED;
@@ -64,16 +59,10 @@ public class JewelHandler {
 
     // Computes which of the 2 jewels to knock down
     public boolean compute() {
-        team = computeColor(Sensor.BALANCING_STONE);
-
         servo.setPosition(armDownPosition);
-        try {
-            Thread.sleep(2000);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        }
+        delay(2000);
 
-        jewelTeam = computeColor(Sensor.JEWEL);
+        jewelTeam = computeColor();
 
         knockdownJewel = getJewelTeam() == getTeamColor();
         return knockdownJewel;
@@ -82,8 +71,12 @@ public class JewelHandler {
     // Get the arm back to the up position
     public void retractServo() {
         servo.setPosition(armUpPosition);
+        delay(2000);
+    }
+
+    private void delay(int t) {
         try {
-            Thread.sleep(2000);
+            Thread.sleep(t);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }

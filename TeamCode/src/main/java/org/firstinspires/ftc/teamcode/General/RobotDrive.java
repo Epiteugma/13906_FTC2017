@@ -1,9 +1,12 @@
 package org.firstinspires.ftc.teamcode.General;
 
 import com.qualcomm.hardware.bosch.BNO055IMU;
+import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
+import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
@@ -15,39 +18,55 @@ public class RobotDrive {
         LEFT, RIGHT
     }
 
+    public enum ServoPos {
+        Down, Up
+    }
+
+    private ServoPos servoPos = ServoPos.Up;
+
     public static final float UNCHANGED = -999;
     private static final double P_DRIVE_COEFF = 0.1;
-    private static final double P_TURN_COEFF = 0.1;
+    private static final double P_TURN_COEFF = 0.02;
+    private static final double I_TURN_COEFF = 0;
+    private static final double D_TURN_COEFF = 0;
+
+    private static final double servoUpPosition = 0.25;
+    private static final double servoDownPosition = 0.61;
 
     private HardwareMap hardwareMap = null;
-    private DcMotor left_drive, right_drive;
-    private BNO055IMU imu;
+    public DcMotor left_drive, right_drive;
 
-    private PID p_controller_DRIVE = new PID();
+    private BNO055IMU imu;
+    private BNO055IMU.Parameters params;
+
     private PID p_controller_TURN = new PID();
 
     private boolean encoderInMove = false;
 
+    private int desired_en_left = 0;
+    private int desired_en_right = 0;
+
+    private LinearOpMode opMode;
+
+    private Servo balancing_stone_servo;
+
+
     public RobotDrive() {}
 
-    public void init(HardwareMap hm,
-                     String ld,
-                     String rd) {
-        init(hm, ld, rd, true);
+    public void init(LinearOpMode opMode, HardwareMap hm) {
+        init(opMode, hm, true);
     }
 
     // Initialize the process
-    public void init(HardwareMap hm,
-                     String ld,
-                     String rd,
-                     boolean eim) {
+    public void init(LinearOpMode opMode, HardwareMap hm, boolean eim) {
 
         hardwareMap = hm;
+        this.opMode = opMode;
 
         encoderInMove = eim;
 
         // Setup BNO055 built in IMU
-        BNO055IMU.Parameters params = new BNO055IMU.Parameters();
+        params = new BNO055IMU.Parameters();
         params.angleUnit            = BNO055IMU.AngleUnit.DEGREES;
         params.accelUnit            = BNO055IMU.AccelUnit.METERS_PERSEC_PERSEC;
         params.calibrationDataFile  = "BNO055IMUCalibration.json";
@@ -56,8 +75,12 @@ public class RobotDrive {
         imu.initialize(params);
 
         // Initialize Motors
-        left_drive = hardwareMap.get(DcMotor.class, ld);
-        right_drive = hardwareMap.get(DcMotor.class, rd);
+        left_drive = hardwareMap.get(DcMotor.class, "leftDrive");
+        right_drive = hardwareMap.get(DcMotor.class, "rightDrive");
+
+        // Initialize Servo
+        balancing_stone_servo = hardwareMap.get(Servo.class, "balancing_stone_servo");
+        balancing_stone_servo.setPosition(servoUpPosition);
 
         // Setting the direction of the motors
         left_drive.setDirection(DcMotorSimple.Direction.FORWARD);
@@ -70,8 +93,7 @@ public class RobotDrive {
         left_drive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         right_drive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
 
-        p_controller_DRIVE.init(P_DRIVE_COEFF, 0, 0, -1, 1);
-        p_controller_TURN.init(P_TURN_COEFF, 0, 0, -1, 1);
+        p_controller_TURN.init(P_TURN_COEFF, I_TURN_COEFF, D_TURN_COEFF, -1, 1);
     }
 
     // Move the robot by giving it ONLY motor power
@@ -85,58 +107,63 @@ public class RobotDrive {
             right_drive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         }
 
+        if (powL != 0 && powR != 0) {
+            desired_en_left = left_drive.getCurrentPosition();
+            desired_en_right = right_drive.getCurrentPosition();
+        }
+        
         // Setting the motors power
-        if (powL != UNCHANGED) left_drive.setPower(powL);
-        if (powR != UNCHANGED) right_drive.setPower(powR);
+        left_drive.setPower(powL);
+        right_drive.setPower(powR);
     }
 
     // Moving the robot by giving it a desired motor position
     public void incrementMotorPosition (int l, int r, double power, boolean waitForAction) {
-        // For using the build in PID motor control
-        left_drive.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        right_drive.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        if (!opMode.isStopRequested()) {
+            // For using the build in PID motor control
+            left_drive.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            right_drive.setMode(DcMotor.RunMode.RUN_TO_POSITION);
 
-        // Set the desire motor position
-        left_drive.setTargetPosition(left_drive.getCurrentPosition() + l);
-        right_drive.setTargetPosition(right_drive.getCurrentPosition() + r);
+            desired_en_left -= l;
+            desired_en_right -= r;
 
-        // Set the power that we want the motor to run at
-        left_drive.setPower(power);
-        right_drive.setPower(power);
+            // Set the desire motor position
+            left_drive.setTargetPosition(desired_en_left);
+            right_drive.setTargetPosition(desired_en_right);
 
-        // Wait for the desired position to be reached
-        if (waitForAction) {
-            while(left_drive.isBusy() || right_drive.isBusy());
+            // Set the power that we want the motor to run at
+            left_drive.setPower(power);
+            right_drive.setPower(power);
+
+            // Wait for the desired position to be reached
+            if (waitForAction) {
+                while ((left_drive.isBusy() || right_drive.isBusy()) && opMode.opModeIsActive()) ;
+                left_drive.setPower(0);
+                right_drive.setPower(0);
+            }
         }
     }
 
-    // Straight Movement Using Gyro
-    public void moveUsingGyro (int ticks, double power) {
-        double target_angle = imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES).firstAngle;
+    public void toggleBackServoPosition ( ) {
+        servoPos = servoPos == ServoPos.Down ? ServoPos.Up : ServoPos.Down;
+        balancing_stone_servo.setPosition(servoPos == ServoPos.Down ? servoDownPosition : servoUpPosition);
+    }
 
-        p_controller_DRIVE.setSetpoint(target_angle);
+    public void back_servo_up() {
+        balancing_stone_servo.setPosition(servoUpPosition);
+    }
 
-        left_drive.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        right_drive.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-
-        left_drive.setTargetPosition(left_drive.getCurrentPosition() + ticks);
-        right_drive.setTargetPosition(right_drive.getCurrentPosition() + ticks);
-
-        left_drive.setPower(power);
-        right_drive.setPower(power);
-
-        while (left_drive.isBusy() || right_drive.isBusy()) {
-            double current_angle = imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES).firstAngle;
-            double steer_value = p_controller_DRIVE.Compute(current_angle);
-
-            left_drive.setPower(power - steer_value);
-            right_drive.setPower(power + steer_value);
-        }
+    public void back_servo_down() {
+        balancing_stone_servo.setPosition(servoDownPosition);
     }
 
     // Turning using the gyro
-    public void gyroTurn (double degrees, double power, double threshold) {
-        double current_angle =  imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES).firstAngle;
+    // TODO fix delay due to reinitialization of the object.
+    public void turn (double degrees, double power, double t, boolean useTime) {
+        imu.initialize(params);
+
+        ElapsedTime eTime = new ElapsedTime();
+        double current_angle = 0;
         double target_angle = current_angle + degrees;
 
         p_controller_TURN.setSetpoint(target_angle);
@@ -144,12 +171,27 @@ public class RobotDrive {
         left_drive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         right_drive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
-        do {
-            current_angle = imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES).firstAngle;
+        eTime.reset();
+        while (opMode.opModeIsActive()) {
+            current_angle = getHeading();
 
             double pow = power * p_controller_TURN.Compute(current_angle);
             left_drive.setPower(pow);
             right_drive.setPower(-pow);
-        } while (Math.abs(current_angle - target_angle) <= threshold);
+
+            boolean exitCondition;
+            if (useTime)  exitCondition = eTime.milliseconds() > t;
+            else exitCondition = Math.abs(current_angle - target_angle) <= t;
+
+            if (exitCondition) break;
+        }
+        left_drive.setPower(0);
+        right_drive.setPower(0);
+    }
+
+    private double getHeading() {
+        return imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES).firstAngle;
     }
 }
+
+
