@@ -137,7 +137,7 @@ public class RobotDrive {
 
             // Wait for the desired position to be reached
             if (waitForAction) {
-                while ((left_drive.isBusy() || right_drive.isBusy()) && opMode.opModeIsActive()) ;
+                while ((left_drive.isBusy() || right_drive.isBusy()) && !opMode.isStopRequested()) ;
                 left_drive.setPower(0);
                 right_drive.setPower(0);
             }

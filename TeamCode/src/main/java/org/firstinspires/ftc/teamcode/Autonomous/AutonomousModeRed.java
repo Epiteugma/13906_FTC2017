@@ -68,10 +68,10 @@ public class AutonomousModeRed extends LinearOpMode {
             telemetry.addData("Pictograph", pictographIdentification.getCubePosition());
             telemetry.update();
 
-        /*
-        Calculating and moving the robot in that direction in order to
-        knock down the correct jewel
-         */
+            /*
+            Calculating and moving the robot in that direction in order to
+            knock down the correct jewel
+             */
             boolean knockdownJewel = jewelHandler.compute();
             robot.incrementMotorPosition(
                     knockdownJewel ? turnTicks : -turnTicks,
@@ -106,28 +106,22 @@ public class AutonomousModeRed extends LinearOpMode {
             // Turn towards the cryptobox
             robot.turn(-90, 0.3, 5, false);
             robot.move(0, 0);
-            try {
-                Thread.sleep(100);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
+            delay(100);
 
             robot.move(-0.5, -0.5);
-            try {
-                Thread.sleep(2000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
+            delay(2000);
 
             claw.openClaw();
 
             robot.move(0.5, 0.5);
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
+            delay(1000);
         }
+        claw.kill();
+    }
+
+    private void delay(double t) {
+        double s = runTime.milliseconds();
+        while (opModeIsActive() && runTime.milliseconds() - s < t);
     }
 
     private double constrain(double x, double min, double max) {

@@ -157,10 +157,10 @@ public class ClawThread implements Runnable{
     public void kill () {
         killed = true;
 
-        try {
-            thread.sleep(200000000);
-        } catch (InterruptedException e) {
-            thread.interrupt();
-        }
+//        try {
+//            thread.sleep(200000000);
+//        } catch (InterruptedException e) {
+//            thread.interrupt();
+//        }
     }
 }
