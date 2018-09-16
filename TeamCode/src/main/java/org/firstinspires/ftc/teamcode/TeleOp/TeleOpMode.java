@@ -14,6 +14,7 @@ import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.teamcode.Autonomous.JewelHandler;
 import org.firstinspires.ftc.teamcode.General.ClawThread;
 import org.firstinspires.ftc.teamcode.General.RobotDrive;
+import org.firstinspires.ftc.teamcode.General.Slide;
 
 import java.security.spec.EllipticCurve;
 
@@ -26,12 +27,16 @@ public class TeleOpMode extends LinearOpMode {
 
     private RobotDrive robot = new RobotDrive();
     private ClawThread claw = new ClawThread();
+    private Slide slide = new Slide();
     private JewelHandler jewelHandler = new JewelHandler();
 
     public void runOpMode() throws InterruptedException {
         telemetry.setAutoClear(true);
+
         robot.init(this, hardwareMap);
         claw.init(this, hardwareMap, gamepad1);
+        slide.init(hardwareMap, gamepad1);
+
         jewelHandler.initTeleOp(hardwareMap);
 
         waitForStart();
@@ -63,5 +68,6 @@ public class TeleOpMode extends LinearOpMode {
             telemetry.update();
         }
         claw.kill();
+        slide.kill();
     }
 }
