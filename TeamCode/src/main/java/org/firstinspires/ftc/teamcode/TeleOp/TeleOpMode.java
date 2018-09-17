@@ -51,10 +51,6 @@ public class TeleOpMode extends LinearOpMode {
             turn = turn + micro_turning;
             robot.move(drive + turn, drive - turn);
 
-            if (gamepad1.right_stick_button) {
-                robot.incrementMotorPosition(400, 400, 0.7, true);
-            }
-
             if (gamepad1.dpad_up) {
                 robot.back_servo_up();
             } else if (gamepad1.dpad_down) {
